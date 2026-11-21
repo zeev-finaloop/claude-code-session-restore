@@ -13,9 +13,10 @@ window after VS Code or the Mac restarts.
   `--dangerously-skip-permissions`). Snapshots are written to
   `~/.claude/vscode-restore/<window>.json`.
 - **Restore:** when a window starts, the extension checks its snapshot for
-  sessions whose process is gone and whose transcript still exists. It asks
-  whether to resume them; set `claudeRestore.mode` to `auto` or `off` to
-  change that. Each session is resumed with
+  sessions that no live process is on and whose transcript still exists, and
+  resumes them without asking. Set `claudeRestore.mode` to `ask` (a modal
+  dialog, no timeout) or `off` to change that. Sessions you already resumed by
+  hand are skipped. Each session is resumed with
   `claude --resume <id> <original flags>`. When VS Code has revived the old
   shell under the same name, the session runs in that shell; otherwise in a
   new terminal.

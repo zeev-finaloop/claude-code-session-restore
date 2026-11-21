@@ -121,9 +121,27 @@ function isAlive(pid) {
   }
 }
 
-// A snapshot entry still counts as running only if the same pid is alive AND
-// its session file still names the same session (pids get reused after a reboot).
-function stillRunning(entry) {
+// Session IDs that some live claude process is on right now, whatever its pid.
+// Catches sessions the user already resumed by hand after a restart, so they
+// are not resumed a second time.
+function liveSessionIds() {
+  const ids = new Set();
+  let files = [];
+  try { files = fs.readdirSync(SESSIONS_DIR); } catch {}
+  for (const f of files) {
+    const m = f.match(/^(\d+)\.json$/);
+    if (!m || !isAlive(Number(m[1]))) continue;
+    const s = readSessionFile(Number(m[1]));
+    if (s) ids.add(s.sessionId);
+  }
+  return ids;
+}
+
+// A snapshot entry counts as running if the same pid is alive and still on the
+// same session (pids get reused after a reboot), or if any other live process
+// is on that session.
+function stillRunning(entry, live) {
+  if ((live || liveSessionIds()).has(entry.sessionId)) return true;
   if (!isAlive(entry.pid)) return false;
   const s = readSessionFile(entry.pid);
   return !!s && s.sessionId === entry.sessionId;
@@ -206,7 +224,8 @@ async function pendingSessions() {
   } catch {
     return [];
   }
-  return (snap.sessions || []).filter((e) => !stillRunning(e) && transcriptExists(e.sessionId));
+  const live = liveSessionIds();
+  return (snap.sessions || []).filter((e) => !stillRunning(e, live) && transcriptExists(e.sessionId));
 }
 
 async function resume(entries) {
@@ -243,8 +262,10 @@ async function maybeRestore(manual) {
     if (!manual && mode === 'off') return;
     if (!manual && mode === 'ask') {
       const names = entries.map(displayName).join(', ');
+      // Modal: a plain notification toast hides itself after a few seconds.
       const pick = await vscode.window.showInformationMessage(
-        `Resume ${entries.length} Claude session(s) from before the restart? (${names})`,
+        `Resume ${entries.length} Claude session(s) from before the restart?`,
+        { modal: true, detail: names },
         'Resume', 'Not now');
       if (pick !== 'Resume') return;
     }

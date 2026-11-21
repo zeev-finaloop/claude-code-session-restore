@@ -2,7 +2,7 @@
   "name": "claude-session-restore",
   "displayName": "Claude Session Restore",
   "description": "Snapshots the Claude Code sessions running in each window's terminals and resumes them after VS Code or the Mac restarts.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "local",
   "license": "UNLICENSED",
   "engines": { "vscode": "^1.90.0" },
@@ -20,7 +20,7 @@
         "claudeRestore.mode": {
           "type": "string",
           "enum": ["ask", "auto", "off"],
-          "default": "ask",
+          "default": "auto",
           "description": "On window start, if Claude sessions from the last snapshot are no longer running: ask, resume automatically, or do nothing."
         },
         "claudeRestore.intervalSeconds": {
