@@ -1,0 +1,34 @@
+{
+  "name": "claude-session-restore",
+  "displayName": "Claude Session Restore",
+  "description": "Snapshots the Claude Code sessions running in each window's terminals and resumes them after VS Code or the Mac restarts.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.90.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      { "command": "claudeRestore.restoreNow", "title": "Claude Restore: Resume sessions from last snapshot" },
+      { "command": "claudeRestore.snapshotNow", "title": "Claude Restore: Snapshot sessions now" },
+      { "command": "claudeRestore.showSnapshot", "title": "Claude Restore: Show this window's snapshot" }
+    ],
+    "configuration": {
+      "title": "Claude Session Restore",
+      "properties": {
+        "claudeRestore.mode": {
+          "type": "string",
+          "enum": ["ask", "auto", "off"],
+          "default": "ask",
+          "description": "On window start, if Claude sessions from the last snapshot are no longer running: ask, resume automatically, or do nothing."
+        },
+        "claudeRestore.intervalSeconds": {
+          "type": "number",
+          "default": 60,
+          "description": "How often to snapshot this window's Claude sessions."
+        }
+      }
+    }
+  }
+}
