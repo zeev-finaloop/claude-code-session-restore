@@ -184,6 +184,15 @@ async function takeSnapshot(reason) {
   }
 }
 
+// Claude retitles its terminal while it runs ("✳ <task>", "◑ <task>", or its
+// version when idle), so tab names are a poor key. Strip the status glyph, and
+// fall back to the session's name when all that's left is a version number.
+function displayName(e) {
+  const t = (e.terminalName || '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+  if (!t || /^\d+\.\d+\.\d+$/.test(t)) return e.sessionName || 'claude';
+  return t;
+}
+
 function shellQuote(s) {
   return /^[A-Za-z0-9_\-./=:@]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`;
 }
@@ -208,17 +217,17 @@ async function resume(entries) {
     // scrollback, no child process). Reuse it so there's no duplicate tab.
     let target;
     for (const t of vscode.window.terminals) {
-      if (used.has(t) || t.name !== e.terminalName) continue;
+      if (used.has(t) || displayName({ terminalName: t.name }) !== displayName(e)) continue;
       const pid = await t.processId;
       if (pid && descendants(tree, pid).length === 0) { target = t; break; }
     }
     if (!target) {
-      target = vscode.window.createTerminal({ name: e.terminalName, cwd: e.cwd });
+      target = vscode.window.createTerminal({ name: displayName(e), cwd: e.cwd });
     }
     used.add(target);
     const cmd = ['claude', '--resume', e.sessionId, ...e.flags].map(shellQuote).join(' ');
     target.sendText(`cd ${shellQuote(e.cwd)} && ${cmd}`, true);
-    log(`resumed ${e.sessionId} (${e.sessionName || e.terminalName}) in "${target.name}"`);
+    log(`resumed ${e.sessionId} (${displayName(e)}) in "${target.name}"`);
   }
   if (entries.length) vscode.window.terminals.find((t) => used.has(t))?.show(true);
 }
@@ -233,7 +242,7 @@ async function maybeRestore(manual) {
     const mode = vscode.workspace.getConfiguration('claudeRestore').get('mode');
     if (!manual && mode === 'off') return;
     if (!manual && mode === 'ask') {
-      const names = entries.map((e) => e.sessionName || e.terminalName).join(', ');
+      const names = entries.map(displayName).join(', ');
       const pick = await vscode.window.showInformationMessage(
         `Resume ${entries.length} Claude session(s) from before the restart? (${names})`,
         'Resume', 'Not now');
