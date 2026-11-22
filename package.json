@@ -3,7 +3,7 @@
   "displayName": "Session Restore for Claude Code",
   "description": "Brings back the Claude Code sessions running in each window's terminals after VS Code quits, crashes or the machine restarts.",
   "version": "0.3.0",
-  "publisher": "zeev-finaloop",
+  "publisher": "szeevs",
   "license": "MIT",
   "icon": "images/icon.png",
   "repository": { "type": "git", "url": "https://github.com/zeev-finaloop/claude-code-session-restore" },
