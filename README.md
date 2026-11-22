@@ -1,56 +1,69 @@
-# claude-session-restore
+# Session Restore for Claude Code
 
-A local VS Code extension. It brings back the Claude Code sessions in each
-window after VS Code or the Mac restarts.
+Run several Claude Code sessions in VS Code terminals, then quit VS Code, let
+it crash, or reboot the machine: each window resumes its own sessions, in
+terminals with their old names, in the right folders, with the flags they were
+started with.
 
 ## How it works
 
-- **Snapshot:** every 60 s, and 5 s after any terminal opens or closes, each
+- **Snapshot:** every 60 s, and 5 s after a terminal opens or closes, each
   window records which of its terminals runs an interactive `claude` process.
-  The session ID comes from the file Claude Code writes for every process,
-  `~/.claude/sessions/<pid>.json`, so the mapping is exact. The extension also
-  records the terminal name, the cwd and the CLI flags (for example
-  `--dangerously-skip-permissions`). Snapshots are written to
-  `~/.claude/vscode-restore/<window>.json`.
-- **Restore:** when a window starts, the extension checks its snapshot for
-  sessions that no live process is on and whose transcript still exists, and
-  resumes them without asking. Set `claudeRestore.mode` to `ask` (a modal
-  dialog, no timeout) or `off` to change that. Sessions you already resumed by
-  hand are skipped. Each session is resumed with
-  `claude --resume <id> <original flags>`. When VS Code has revived the old
-  shell under the same name, the session runs in that shell; otherwise in a
-  new terminal.
-- **Plain shells:** VS Code's own persistent terminals restore them, with
-  their cwd and scrollback. Turn that on for reboots too; see Install.
+  The session ID comes from the file Claude Code writes for every process
+  (`~/.claude/sessions/<pid>.json`), so the mapping is exact, not guessed from
+  the folder. The terminal name, folder and CLI flags are recorded too.
+- **Restore:** when a window starts, it looks for sessions in its snapshot that
+  no process is running any more and whose transcript still exists, and runs
+  `claude --resume <id> <original flags>` for each. A session you already
+  resumed by hand is skipped. If VS Code revived the old shell under the same
+  name, the session resumes there; otherwise in a new terminal.
+- **Other terminals and windows:** VS Code's persistent terminals bring back
+  plain shells, and `window.restoreWindows` brings back windows. On first run
+  the extension offers to turn both on so they also survive quitting VS Code
+  and rebooting.
 
-## Install
+The initial prompt of a session is not sent again, and flags that would start
+something new (`--fork-session`, `--worktree`, `--print`, `--continue`, …) are
+not carried over.
+
+## Settings
+
+| Setting | Default | |
+|---|---|---|
+| `claudeRestore.mode` | `auto` | `auto` resumes without asking. `ask` asks first, in a dialog that waits for you. `off` does nothing until you run the Resume command. |
+| `claudeRestore.intervalSeconds` | `60` | How often to snapshot. |
+| `claudeRestore.claudeConfigDir` | empty | Claude Code's config directory, if not `$CLAUDE_CONFIG_DIR` or `~/.claude`. |
+
+## Commands
+
+Command Palette, "Claude Restore":
+
+- **Resume sessions from last snapshot**
+- **Reopen windows that have sessions to resume.** Use this after a reboot if
+  VS Code didn't reopen every window.
+- **Snapshot sessions now**
+- **Show this window's snapshot**
+
+Logs: Output panel, "Claude Session Restore".
+
+## Requirements and limits
+
+- macOS or Linux, including Remote SSH, WSL and Dev Container windows. Native
+  Windows is not supported.
+- Claude Code run in VS Code's integrated terminal. Sessions in the Claude
+  Code chat panel are not covered.
+- An empty window, with no folder open, is not snapshotted.
+- On macOS, a flag value that contains spaces (for example
+  `--append-system-prompt "be brief"`) is split into words, because `ps` does
+  not keep argument boundaries.
+- Works in VS Code, and in Cursor and other editors that install from Open VSX.
+
+## Development
 
 ```bash
-./install.sh
+node --test                                                  # unit tests
+npx @vscode/vsce package && code --install-extension *.vsix  # try it locally
 ```
 
-The script packages and installs the extension. It also sets
-`terminal.integrated.persistentSessionReviveProcess` to
-`onExitAndWindowClose` and `window.restoreWindows` to `all`.
-
-## After a reboot
-
-1. Open VS Code. It normally reopens its windows by itself.
-2. If it doesn't, run `./reopen-windows.sh` to list the windows from the
-   snapshots, then `./reopen-windows.sh --open` to open them.
-3. Click **Resume** in each window.
-
-**Commands** (Command Palette → "Claude Restore"):
-
-- Resume sessions from last snapshot
-- Snapshot sessions now
-- Show this window's snapshot
-
-**Logs:** Output panel → "Claude Session Restore".
-
-## Caveats
-
-- Answering "Not now" skips the resume. The next snapshot, within 60 s, then
-  replaces the old list.
-- An empty window, with no folder open, has no stable key and is not
-  snapshotted.
+Pushing a `v*` tag publishes to the VS Code Marketplace and Open VSX; see
+`.github/workflows/publish.yml`.

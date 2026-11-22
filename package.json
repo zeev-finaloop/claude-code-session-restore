@@ -1,32 +1,54 @@
 {
-  "name": "claude-session-restore",
-  "displayName": "Claude Session Restore",
-  "description": "Snapshots the Claude Code sessions running in each window's terminals and resumes them after VS Code or the Mac restarts.",
-  "version": "0.2.0",
-  "publisher": "local",
-  "license": "UNLICENSED",
+  "name": "claude-code-session-restore",
+  "displayName": "Session Restore for Claude Code",
+  "description": "Brings back the Claude Code sessions running in each window's terminals after VS Code quits, crashes or the machine restarts.",
+  "version": "0.3.0",
+  "publisher": "zeev-finaloop",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": { "type": "git", "url": "https://github.com/zeev-finaloop/claude-code-session-restore" },
+  "bugs": { "url": "https://github.com/zeev-finaloop/claude-code-session-restore/issues" },
+  "homepage": "https://github.com/zeev-finaloop/claude-code-session-restore#readme",
+  "keywords": ["claude", "claude code", "terminal", "session", "restore", "resume", "reboot"],
+  "categories": ["Other"],
   "engines": { "vscode": "^1.90.0" },
   "main": "./extension.js",
   "activationEvents": ["onStartupFinished"],
+  "capabilities": {
+    "untrustedWorkspaces": { "supported": false, "description": "Resuming sessions runs `claude` in this folder's terminals." },
+    "virtualWorkspaces": false
+  },
+  "scripts": {
+    "test": "node --test",
+    "package": "npx --yes @vscode/vsce@3.6.0 package"
+  },
   "contributes": {
     "commands": [
-      { "command": "claudeRestore.restoreNow", "title": "Claude Restore: Resume sessions from last snapshot" },
-      { "command": "claudeRestore.snapshotNow", "title": "Claude Restore: Snapshot sessions now" },
-      { "command": "claudeRestore.showSnapshot", "title": "Claude Restore: Show this window's snapshot" }
+      { "command": "claudeRestore.restoreNow", "title": "Resume sessions from last snapshot", "category": "Claude Restore" },
+      { "command": "claudeRestore.reopenWindows", "title": "Reopen windows that have sessions to resume", "category": "Claude Restore" },
+      { "command": "claudeRestore.snapshotNow", "title": "Snapshot sessions now", "category": "Claude Restore" },
+      { "command": "claudeRestore.showSnapshot", "title": "Show this window's snapshot", "category": "Claude Restore" }
     ],
     "configuration": {
-      "title": "Claude Session Restore",
+      "title": "Session Restore for Claude Code",
       "properties": {
         "claudeRestore.mode": {
           "type": "string",
-          "enum": ["ask", "auto", "off"],
+          "enum": ["auto", "ask", "off"],
+          "enumDescriptions": ["Resume without asking.", "Ask first, in a dialog that waits for an answer.", "Do nothing; use the Resume command by hand."],
           "default": "auto",
-          "description": "On window start, if Claude sessions from the last snapshot are no longer running: ask, resume automatically, or do nothing."
+          "description": "What to do when a window starts and Claude sessions from its last snapshot are no longer running."
         },
         "claudeRestore.intervalSeconds": {
           "type": "number",
           "default": 60,
+          "minimum": 15,
           "description": "How often to snapshot this window's Claude sessions."
+        },
+        "claudeRestore.claudeConfigDir": {
+          "type": "string",
+          "default": "",
+          "description": "Claude Code's config directory. Empty: $CLAUDE_CONFIG_DIR, or ~/.claude."
         }
       }
     }

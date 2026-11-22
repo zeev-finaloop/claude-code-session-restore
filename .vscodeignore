@@ -1,0 +1,5 @@
+.github/**
+test/**
+images/*.svg
+*.vsix
+.gitignore
