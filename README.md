@@ -56,7 +56,10 @@ Logs: Output panel, "Claude Session Restore".
 - On macOS, a flag value that contains spaces (for example
   `--append-system-prompt "be brief"`) is split into words, because `ps` does
   not keep argument boundaries.
-- Works in VS Code, and in Cursor and other editors that install from Open VSX.
+- Published on the VS Code Marketplace. For Cursor and other editors that use
+  Open VSX, download the `.vsix` from the
+  [latest release](https://github.com/zeev-finaloop/claude-code-session-restore/releases/latest)
+  and run `cursor --install-extension <file>.vsix`.
 
 ## Development
 
@@ -65,5 +68,5 @@ node --test                                                  # unit tests
 npx @vscode/vsce package && code --install-extension *.vsix  # try it locally
 ```
 
-Pushing a `v*` tag publishes to the VS Code Marketplace and Open VSX; see
-`.github/workflows/publish.yml`.
+Pushing a `v*` tag runs the tests and attaches the `.vsix` to a GitHub
+release. Upload that file to the VS Code Marketplace by hand.

@@ -1,11 +1,18 @@
-name: publish
+name: release
+
+# On a v* tag: test, package, and attach the .vsix to the GitHub release.
+# Upload that .vsix to the VS Code Marketplace by hand
+# (marketplace.visualstudio.com/manage/publishers/szeevs → ⋯ → Update).
 
 on:
   push:
     tags: ['v*']
 
+permissions:
+  contents: write
+
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,10 +20,10 @@ jobs:
         with:
           node-version: 20
       - run: node --test
-      - run: npx --yes @vscode/vsce@3.6.0 package -o ext.vsix
-      - run: npx --yes @vscode/vsce@3.6.0 publish --packagePath ext.vsix
+      - run: npx --yes @vscode/vsce@3.6.0 package -o "claude-code-session-restore-${GITHUB_REF_NAME#v}.vsix"
+      - run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      - run: npx --yes ovsx@0.10.1 publish ext.vsix
+          GH_TOKEN: ${{ github.token }}
+      - run: gh release upload "$GITHUB_REF_NAME" *.vsix --clobber
         env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          GH_TOKEN: ${{ github.token }}
